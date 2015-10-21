@@ -13,8 +13,8 @@
             font-size: 14px;
         }
     </style>
-    <title>Schedular</title>  
-    
+    <title>Schedular</title>
+
     <link rel="stylesheet" href="http://cdn.kendostatic.com/2014.3.1411/styles/kendo.common.min.css">
     <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2015.2.902/styles/kendo.metro.min.css" />
 
@@ -115,7 +115,7 @@
         }
 
         .background {
-            background-color: #e1e1e1 !important;
+            background-color: rgba(225,225,225,0.3) !important;
         }
 
         .background-event {
@@ -178,8 +178,7 @@
     <script id="event-template" type="text/x-kendo-template">
         <div class="evt-template # if(title == ''){# we #}else if(title.indexOf('[') >= 0){# spcl #}else{# wd #}#" title="#: description #">
             # if(title != ''){ #
-            #: title #
-            <!--<em>#: title #</em>-->
+            #: title #            
             # if(kendo.toString(start, "hh:mm") != kendo.toString(end, "hh:mm")){ #
             #: kendo.toString(start, "hh:mm") # - #: kendo.toString(end, "hh:mm") #
             # } else { #
@@ -231,7 +230,7 @@
                     "month",
                     "agenda"
                 ],
-                editable: false,
+                editable: true,
                 eventTemplate: $("#event-template").html(),
                 resources: [
                     // First resource type definition
@@ -240,10 +239,15 @@
                         title: "Types",
                         dataSource: [
                           { text: "Background", value: 1, color: "#d7d7d7" },
-                          { text: "Foreground", value: 2, color: "#3a87ad" }                        
+                          { text: "Foreground", value: 2, color: "#3a87ad" }
                         ]
-                    }                
+                    }
                 ],
+                edit: function (e) {
+                    if (e.event.typeId === 1) {
+                        e.preventDefault();
+                    }
+                },
                 dataSource: [
                     { id: "Single regular event alone", title: "Single regular event alone", start: "2015-10-14 05:00:00", end: "2015-10-14 06:00:00", isAllDay: false, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
                      { id: "Regular allDay Events alone", title: "Single allDay regular event alone", start: "2015-10-16 00:00:00", end: "2015-10-16 00:00:00", isAllDay: true, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
@@ -372,10 +376,8 @@
                     var s = '';
                     $('div.k-event').removeClass('special-event');
                     e.sender._data.forEach(function (eventDetails) {
-                        //  debugger;
 
                         if (eventDetails['backgroundtypeId'] !== 0) {
-                            // debugger;
                             var backgroundid = eventDetails['backgroundtypeId'];
                             var s = getbackgroundeventcolor(backgroundid);
                             if (s !== 'undefined') {
