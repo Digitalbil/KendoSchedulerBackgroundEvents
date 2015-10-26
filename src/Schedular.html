@@ -15,15 +15,12 @@
     </style>
     <title>Schedular</title>
 
-    <link rel="stylesheet" href="http://cdn.kendostatic.com/2014.3.1411/styles/kendo.common.min.css">
+    <link rel="stylesheet" href="http://kendo.cdn.telerik.com/2015.3.930/styles/kendo.common.min.css">
     <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2015.2.902/styles/kendo.metro.min.css" />
 
-
-    <script src="https://kendo.cdn.telerik.com/2015.2.902/js/jquery.min.js"></script>
-    <script src="https://kendo.cdn.telerik.com/2015.2.902/js/kendo.all.min.js"></script>
+    <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script src="http://kendo.cdn.telerik.com/2015.3.930/js/kendo.all.min.js"></script>
     <script src="https://kendo.cdn.telerik.com/2015.2.902/js/kendo.timezones.min.js"></script>
-
-
 
     <style type="text/css">
         .k-scheduler-table td, .k-scheduler-table th {
@@ -49,10 +46,6 @@
             }
 
         .k-event {
-            /*background-color: transparent;
-            border-color: #ccc;
-            color: #666;
-            font-size: 65%;*/
             border-color: #ccc;
             background-color: transparent;
             border-radius: 3px;
@@ -87,9 +80,9 @@
 
         .spcl {
             /*background: #2D3E50 0 -257px none repeat-x;
-            color: #ccc;
-            border-color: #2D3E50;
-            padding: 1px 0 0 1px;*/
+              color: #ccc;
+              border-color: #2D3E50;
+              padding: 1px 0 0 1px;*/
         }
 
         .wd {
@@ -110,12 +103,11 @@
         }
 
         .special-event {
-            /*height: 100%;*/
             z-index: 1;
         }
 
         .background {
-            background-color: rgba(225,225,225,0.3) !important;
+            background-color: rgba(225,225,225,.3) !important;
         }
 
         .background-event {
@@ -138,8 +130,6 @@
         }
 
         span.pill.circle {
-            /*line-height: 14px;
-            min-width: 17px;*/
             float: right;
             line-height: 9px;
             min-width: 12px;
@@ -164,6 +154,10 @@
             white-space: nowrap;
             opacity: 0.9;
         }
+
+        .k-event-inverse {
+            color: black;
+        }
     </style>
 </head>
 <body>
@@ -178,45 +172,161 @@
     <script id="event-template" type="text/x-kendo-template">
         <div class="evt-template # if(title == ''){# we #}else if(title.indexOf('[') >= 0){# spcl #}else{# wd #}#" title="#: description #">
             # if(title != ''){ #
-            #: title #            
+            #: title #
             # if(kendo.toString(start, "hh:mm") != kendo.toString(end, "hh:mm")){ #
             #: kendo.toString(start, "hh:mm") # - #: kendo.toString(end, "hh:mm") #
             # } else { #
 
             # } #
-            <!--<div>#: description #</div>-->
             # } else { #
             <br /><br /><br />
             # } #
         </div>
     </script>
     <script type="text/javascript" language="javascript">
-
         var backgroundeventscolor = [];
         backgroundeventscolor.push({ 'color': '#ffffff' });
-        backgroundeventscolor.push({ 'color': '#D7D7D7' });
-        backgroundeventscolor.push({ 'color': '#00FFCC' });
-        backgroundeventscolor.push({ 'color': '#B2FFF0' });
-        backgroundeventscolor.push({ 'color': '#33CCFF' });
-        backgroundeventscolor.push({ 'color': '#009999' });
-        backgroundeventscolor.push({ 'color': '#FFFF00' });
-        backgroundeventscolor.push({ 'color': '#FF9900' });
-        backgroundeventscolor.push({ 'color': '#FF0000' });
-        backgroundeventscolor.push({ 'color': '#FF66FF' });
-        backgroundeventscolor.push({ 'color': '#9900CC' });
+        backgroundeventscolor.push({ 'color': 'rgba(215, 215, 215, 1)' });
+        backgroundeventscolor.push({ 'color': 'rgba(0, 255, 204, 1)' });
+        backgroundeventscolor.push({ 'color': 'rgba(178, 255, 240, 1)' });
+        backgroundeventscolor.push({ 'color': 'rgba(51, 204, 255, 1)' });
+        backgroundeventscolor.push({ 'color': 'rgba(0, 153, 153, 1)' });
+        backgroundeventscolor.push({ 'color': 'rgba(255, 255, 0, 1)' });
+        backgroundeventscolor.push({ 'color': 'rgba(255, 153, 0, 1)' });
+        backgroundeventscolor.push({ 'color': 'rgba(255, 0, 0, 1)' });
+        backgroundeventscolor.push({ 'color': 'rgba(255, 102, 255, 1)' });
+        backgroundeventscolor.push({ 'color': 'rgba(153, 0, 204, 1)' });
+
         function getbackgroundeventcolor(id) {
             return backgroundeventscolor[id].color;
         }
 
+        function objectlist(_list) {
 
+            var left = 0; var top = 0; var width = 0;
+            var _elementsposition = [];
+            var _backgroundevents = _list.filter(function (obj) {
+                return obj.typeId === 1;
+            });
+
+            var _regularevents = _list.filter(function (obj) {
+                return obj.typeId === 2;
+            });
+
+            var _iscollision = 0;
+            if (_backgroundevents.length > 0 && _regularevents.length > 0) {
+                _iscollision = 1;
+                _list.forEach(function (events) {
+                    var _position = $('div.k-event[data-uid="' + events.uid + '"]').position();
+                    _elementsposition.push(_position.left);
+                });
+
+                function sortdata(data_A, data_B) {
+                    return (data_A - data_B);
+                }
+
+                if (_elementsposition.length > 0) {
+                    var d = _elementsposition.sort(sortdata);
+                    left = d[0];
+                }
+
+                _backgroundevents.forEach(function (events) {
+                    var _position = $('div.k-event[data-uid="' + events.uid + '"]').position();
+                    if (left === 0 && top === 0) {
+                        left = _position.left;
+                        top = _position.top;
+                    } else if (left > _position.left) {
+                        left = _position.left;
+                        top = _position.top;
+                    }
+
+                    if (left !== 0) {
+                        $('div.k-event[data-uid="' + events.uid + '"]').css({
+                            "left": left
+                        });
+                        left = left + $('div.k-event[data-uid="' + events.uid + '"]').width() + 4;
+                    }
+
+                    var backgroundid = events.backgroundtypeId;
+                    var s = getbackgroundeventcolor(backgroundid);
+                    if (s !== 'undefined') {
+                        $('div.k-event[data-uid="' + events.uid + '"]').css({ "background-color": s, "border-color": s });
+                        $('div.k-event[data-uid="' + events.uid + '"]').prepend("<span class='pill comments circle'>" + backgroundid + "</span>");
+                    }
+                });
+
+                if (_elementsposition.length > 0) {
+                    var d = _elementsposition.sort(sortdata);
+                    left = d[0];
+                }
+
+
+                _regularevents.forEach(function (events) {
+                    var _position = $('div.k-event[data-uid="' + events.uid + '"]').position();
+                    if (left > _position.left) {
+                        left = _position.left;
+                        top = _position.top;
+                    }
+                    if (left !== 0) {
+                        $('div.k-event[data-uid="' + events.uid + '"]').css({
+                            "left": left
+                        });
+                        left = left + $('div.k-event[data-uid="' + events.uid + '"]').width() + 4;
+                        //if (_iscollision === 1) {
+                        //    $('div.k-event[data-uid="' + events.uid + '"] > div').css({ "background": "rgba(58, 135, 173,0.3)" });
+                        //}
+                    }
+                });
+
+
+            }
+            else {
+                noncollisionlist(_list);
+            }
+
+
+        }
+
+        function noncollisionlist(_list) {
+            _list.forEach(function (events) {
+                if (events.backgroundtypeId !== 0) {
+                    var backgroundid = events.backgroundtypeId;
+                    var s = getbackgroundeventcolor(backgroundid);
+                    if (s !== 'undefined') {
+                        $('div.k-event[data-uid="' + events.uid + '"]').css({ "background-color": s, "border-color": s });
+                        $('div.k-event[data-uid="' + events.uid + '"]').prepend("<span class='pill comments circle'>" + backgroundid + "</span>");
+                    }
+                }
+            });
+
+        }
+
+        function setentirecolumnbackgroundcolor(_list) {
+            var scheduler = $("#scheduler").data("kendoScheduler");
+            var view = scheduler.view();
+            view.table.find("td[role=gridcell]").each(function () {
+                if ($(this) != null) {
+                    var element = $(this);
+                    if (element != null) {
+                        var slot = scheduler.slotByElement(element);
+                        if (slot != null) {
+                            var dateSlot = slot.startDate;
+                            var checkrecordexist = _list.filter(function (obj) {
+                                return obj.start.toDateString() === dateSlot.toDateString();
+                            });
+                            if (checkrecordexist.length > 0)
+                                element.addClass("background");
+                        }
+                    }
+                }
+            });
+        }
 
     </script>
 
     <script>
 
         $(function () {
-
-
 
             $("#scheduler").kendoScheduler({
                 date: new Date("2015/10/11"),
@@ -238,16 +348,11 @@
                         field: "typeId",
                         title: "Types",
                         dataSource: [
-                          { text: "Background", value: 1, color: "#d7d7d7" },
-                          { text: "Foreground", value: 2, color: "#3a87ad" }
+                          { text: "Background", value: 1, color: "rgba(215, 215, 215, 1.0)" },
+                          { text: "Foreground", value: 2, color: "rgba(58, 135, 173, 1.0)" }
                         ]
                     }
                 ],
-                edit: function (e) {
-                    if (e.event.typeId === 1) {
-                        e.preventDefault();
-                    }
-                },
                 dataSource: [
                     { id: "Single regular event alone", title: "Single regular event alone", start: "2015-10-14 05:00:00", end: "2015-10-14 06:00:00", isAllDay: false, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
                      { id: "Regular allDay Events alone", title: "Single allDay regular event alone", start: "2015-10-16 00:00:00", end: "2015-10-16 00:00:00", isAllDay: true, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
@@ -262,7 +367,7 @@
             { id: "Regular Events", title: "R3 event", start: "2015-10-16 01:00:00", end: "2015-10-16 02:00:00", isAllDay: false, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
 
                { id: "Background Events", title: "B1 event", start: "2015-10-15 07:00:00", end: "2015-10-15 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-            { id: "Background Events", title: "B2 event", start: "2015-10-15 07:00:00", end: "2015-10-15 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 2 },
+            { id: "Background Events", title: "B2 event", start: "2015-10-15 07:00:00", end: "2015-10-15 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 9 },
               { id: "Background Events", title: "B1 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 3 },
             { id: "Background Events", title: "B2 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 4 },
             { id: "Background Events", title: "B3 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 5 },
@@ -283,7 +388,7 @@
             { id: "Background Events", title: "02 Secretary/Elementary, Administration", start: "2015-10-22 07:00:00", end: "2015-10-22 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
              { id: "w", title: "01", start: "2015-10-06 03:00:00", end: "2015-10-06 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
              { id: "w", title: "02", start: "2015-10-06 04:00:00", end: "2015-10-06 07:00:00", isAllDay: false, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
-
+{ id: "TC", title: "[TC]", start: "2015-10-11 08:00:00", end: "2015-10-11 12:00:00", description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
                     { id: "w", title: "05", start: "2015-10-06 01:00:00", end: "2015-10-06 02:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
           { id: "we", title: "", start: "2015-10-01 00:00:00", end: "2015-10-01 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
     { id: "we", title: "", start: "2015-10-07 00:00:00", end: "2015-10-07 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
@@ -296,7 +401,6 @@
 { id: "we", title: "", start: "2015-10-29 00:00:00", end: "2015-10-29 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
 { id: "NL", title: "[NL]", start: "2015-10-11 00:00:00", end: "2015-10-11 00:00:00", isAllDay: true, description: "No leave allowed", typeId: 2, backgroundtypeId: 0 },
 { id: "OH", title: "[OH]", start: "2015-10-27 16:00:00", end: "2015-10-27 20:00:00", description: "Open House", typeId: 2, backgroundtypeId: 0 },
-{ id: "TC", title: "[TC]", start: "2015-10-11 08:00:00", end: "2015-10-11 12:00:00", description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
 { id: "TC", title: "[TC]", start: "2015-10-16 12:30:00", end: "2015-10-16 12:45:00", description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
 { id: "TC", title: "[TC]", start: "2015-10-17 12:30:00", end: "2015-10-17 12:45:00", description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
 { id: "TC", title: "[TC]", start: "2015-10-19 00:00:00", end: "2015-10-19 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
@@ -315,6 +419,7 @@
 { id: "work01", title: "01", start: "2015-10-09 00:00:00", end: "2015-10-09 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
 { id: "work01", title: "01", start: "2015-10-10 00:00:00", end: "2015-10-10 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
 { id: "work01", title: "01", start: "2015-10-11 00:00:00", end: "2015-10-11 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
+{ id: "work01", title: "01", start: "2015-10-11 08:00:00", end: "2015-10-11 14:00:00", isAllDay: false, description: "Secretary/Clerk 07B, Administration", typeId: 2, backgroundtypeId: 0 },
 { id: "work01", title: "01", start: "2015-10-12 00:00:00", end: "2015-10-12 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
 { id: "work01", title: "01", start: "2015-10-13 00:00:00", end: "2015-10-13 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
 { id: "work01", title: "01", start: "2015-10-17 00:00:00", end: "2015-10-17 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
@@ -370,46 +475,65 @@
 { id: "work03", title: "03", start: "2015-10-30 08:00:00", end: "2015-10-30 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
 { id: "work03", title: "03", start: "2015-10-31 08:00:00", end: "2015-10-31 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
                 ],
+                edit: function (e) {
+                    if (e.event.typeId === 1) {
+                        e.preventDefault();
+                    }
+                },
                 dataBound: function (e) {
                     var scheduler = $("#scheduler").data("kendoScheduler");
+                    var temparray = [];
+                    var _isalldaybackgroundevent = [];
                     var view = scheduler.view();
-                    var s = '';
                     $('div.k-event').removeClass('special-event');
                     e.sender._data.forEach(function (eventDetails) {
 
-                        if (eventDetails['backgroundtypeId'] !== 0) {
-                            var backgroundid = eventDetails['backgroundtypeId'];
-                            var s = getbackgroundeventcolor(backgroundid);
-                            if (s !== 'undefined') {
-                                $('div.k-event[data-uid="' + eventDetails['uid'] + '"]').css(
-                                    { "background-color": s, "border-color": s }
-                                    );
-                                $('div.k-event[data-uid="' + eventDetails['uid'] + '"]').prepend("<span class='pill comments circle'>" + backgroundid + "</span>");
+                        if (eventDetails['isAllDay'] === true) {
+                            if (eventDetails['backgroundtypeId'] !== 0) {
+                                _isalldaybackgroundevent.push(eventDetails);
+                                var backgroundid = eventDetails['backgroundtypeId'];
+                                var s = getbackgroundeventcolor(backgroundid);
+                                if (s !== 'undefined') {
+                                    $('div.k-event[data-uid="' + eventDetails['uid'] + '"]').css({ "background-color": s, "border-color": s });
+                                    $('div.k-event[data-uid="' + eventDetails['uid'] + '"]').prepend("<span class='pill comments circle'>" + backgroundid + "</span>");
+                                }
                             }
                         }
+                        else {
+
+                            var _events = temparray.filter(function (obj) {
+                                return obj.start === eventDetails['start'] && obj.end === eventDetails['end'];
+                            });
+
+                            if (_events.length === 0) {
+                                var occurrences = scheduler.occurrencesInRange(eventDetails['start'], eventDetails['end']);
+                                var _occurrencesdata = [];
+                                occurrences.forEach(function (events) {
+                                    var _regularevents = temparray.filter(function (obj) {
+                                        return obj.start === events.start && obj.end === events.end;
+                                    });
+
+                                    if (_regularevents.length === 0) {
+                                        temparray.push(events);
+                                        _occurrencesdata.push(events);
+                                    }
+                                });
+
+                                if (_occurrencesdata.length > 0)
+                                    objectlist(_occurrencesdata);
+                            }
+                        }
+
                         if (eventDetails['typeId'] === 1) {
                             $('div.k-event[data-uid="' + eventDetails['uid'] + '"]').addClass('background-event');
-                            if (s === '')
-                                s = eventDetails['uid'];
-
-                            view.table.find("td[role=gridcell]").each(function () {
-                                if ($(this) != null) {
-                                    var element = $(this);
-                                    if (element != null) {
-                                        var slot = scheduler.slotByElement(element);
-                                        if (slot != null) {
-                                            var dateSlot = slot.startDate;
-                                            if (eventDetails['start'].toDateString() == dateSlot.toDateString() && eventDetails['isAllDay'] == true)
-                                                element.addClass("background");
-                                        }
-                                    }
-                                }
-                            });
                         }
                         else {
                             $('div.k-event[data-uid="' + eventDetails['uid'] + '"]').css("z-index", "2");
                         }
                     });
+
+                    if (_isalldaybackgroundevent.length > 0)
+                        setentirecolumnbackgroundcolor(_isalldaybackgroundevent);
                 }
             });
         });
