@@ -14,13 +14,12 @@
         }
     </style>
     <title>Schedular</title>
+    <link rel="stylesheet" href="http://kendo.cdn.telerik.com/2015.3.930/styles/kendo.common-material.min.css" />
+    <link rel="stylesheet" href="http://kendo.cdn.telerik.com/2015.3.930/styles/kendo.material.min.css" />
 
-    <link rel="stylesheet" href="http://kendo.cdn.telerik.com/2015.3.930/styles/kendo.common.min.css">
-    <link rel="stylesheet" href="https://kendo.cdn.telerik.com/2015.2.902/styles/kendo.metro.min.css" />
-
-    <script src="http://code.jquery.com/jquery-1.9.1.min.js"></script>
+    <script src="http://kendo.cdn.telerik.com/2015.3.930/js/jquery.min.js"></script>
     <script src="http://kendo.cdn.telerik.com/2015.3.930/js/kendo.all.min.js"></script>
-    <script src="https://kendo.cdn.telerik.com/2015.2.902/js/kendo.timezones.min.js"></script>
+    <script src="https://kendo.cdn.telerik.com/2015.3.930/js/kendo.timezones.min.js"></script>
 
     <style type="text/css">
         .k-scheduler-table td, .k-scheduler-table th {
@@ -202,8 +201,7 @@
         }
 
         function objectlist(_list) {
-
-            var left = 0; var top = 0; var width = 0;
+            var left = 0; var top = 0; var width = 0; var le = 0;
             var _elementsposition = [];
             var _backgroundevents = _list.filter(function (obj) {
                 return obj.typeId === 1;
@@ -215,7 +213,17 @@
 
             var _iscollision = 0;
             if (_backgroundevents.length > 0 && _regularevents.length > 0) {
-                _iscollision = 1;
+
+                var _backgroundeventsWidth;
+                var _regulareventsWidth;
+
+                _backgroundeventsWidth = AdjustCollisioneventsWidth(_backgroundevents.length);
+                _regulareventsWidth = AdjustCollisioneventsWidth(_regularevents.length);
+
+                var _bkeventsposition = [];
+                var _rgeventsposition = [];
+
+
                 _list.forEach(function (events) {
                     var _position = $('div.k-event[data-uid="' + events.uid + '"]').position();
                     _elementsposition.push(_position.left);
@@ -239,11 +247,15 @@
                         left = _position.left;
                         top = _position.top;
                     }
-
+                   
+                    $('div.k-event[data-uid="' + events.uid + '"]').css("width", _backgroundeventsWidth);
                     if (left !== 0) {
                         $('div.k-event[data-uid="' + events.uid + '"]').css({
                             "left": left
                         });
+
+
+                        _bkeventsposition.push({ left: left, uid: events.uid });
                         left = left + $('div.k-event[data-uid="' + events.uid + '"]').width() + 4;
                     }
 
@@ -253,6 +265,8 @@
                         $('div.k-event[data-uid="' + events.uid + '"]').css({ "background-color": s, "border-color": s });
                         $('div.k-event[data-uid="' + events.uid + '"]').prepend("<span class='pill comments circle'>" + backgroundid + "</span>");
                     }
+
+
                 });
 
                 if (_elementsposition.length > 0) {
@@ -260,6 +274,26 @@
                     left = d[0];
                 }
 
+                function sortbkevents(data_A, data_B) {
+                    return (data_A.left - data_B.left);
+                }
+
+
+                if (_bkeventsposition.length > 0) {
+                    var d = _bkeventsposition.sort(sortbkevents);
+                    for (i = 1; i < d.length ; i++) {
+                        var j = d[i - 1].left + _backgroundeventsWidth + 4;
+                        $('div.k-event[data-uid="' + d[i].uid + '"]').css({
+                            "left": j
+                        });
+                    }
+                }
+
+
+                if (_elementsposition.length > 0) {
+                    var d = _elementsposition.sort(sortdata);
+                    left = d[0];
+                }
 
                 _regularevents.forEach(function (events) {
                     var _position = $('div.k-event[data-uid="' + events.uid + '"]').position();
@@ -267,10 +301,12 @@
                         left = _position.left;
                         top = _position.top;
                     }
+                    $('div.k-event[data-uid="' + events.uid + '"]').css("width", _regulareventsWidth);
                     if (left !== 0) {
                         $('div.k-event[data-uid="' + events.uid + '"]').css({
                             "left": left
                         });
+                        _rgeventsposition.push({ left: left, uid: events.uid });
                         left = left + $('div.k-event[data-uid="' + events.uid + '"]').width() + 4;
                         //if (_iscollision === 1) {
                         //    $('div.k-event[data-uid="' + events.uid + '"] > div').css({ "background": "rgba(58, 135, 173,0.3)" });
@@ -278,13 +314,20 @@
                     }
                 });
 
+                if (_rgeventsposition.length > 0) {
+                    var d = _rgeventsposition.sort(sortbkevents);
+                    for (i = 1; i < d.length ; i++) {
+                        var j = d[i - 1].left + _regulareventsWidth + 4;
+                        $('div.k-event[data-uid="' + d[i].uid + '"]').css({
+                            "left": j
+                        });
+                    }
+                }
 
             }
             else {
                 noncollisionlist(_list);
             }
-
-
         }
 
         function noncollisionlist(_list) {
@@ -322,6 +365,19 @@
             });
         }
 
+        function AdjustCollisioneventsWidth(number) {
+
+            var slotwidth = 187;
+            if ($('.k-nonwork-hour').width() !== null) {
+                slotwidth = $('.k-nonwork-hour').width();
+            }
+            else if ($('.k-middle-row').width() !== null) {
+                slotwidth = $('.k-middle-row').width();
+            }
+            var eventwidth = (slotwidth - (slotwidth * 0.10)) / number - 4;
+            return eventwidth;
+        }
+
     </script>
 
     <script>
@@ -342,6 +398,7 @@
                 ],
                 editable: true,
                 eventTemplate: $("#event-template").html(),
+                selectable: true,
                 resources: [
                     // First resource type definition
                     {
@@ -474,18 +531,41 @@
 { id: "work03", title: "03", start: "2015-10-27 08:00:00", end: "2015-10-27 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
 { id: "work03", title: "03", start: "2015-10-30 08:00:00", end: "2015-10-30 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
 { id: "work03", title: "03", start: "2015-10-31 08:00:00", end: "2015-10-31 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-                ],
-                edit: function (e) {
-                    if (e.event.typeId === 1) {
+                ],               
+                remove: function (e) {
+                    var event = e.event;
+                    if (event.typeId === 1) {
                         e.preventDefault();
+                        e.stopPropagation();
                     }
                 },
+                edit: function (e) {                    
+                    if (e.event.typeId === 1) {
+                        e.preventDefault();
+                        e.stopPropagation();
+                    }                 
+                },
                 dataBound: function (e) {
+                   
+                    var scheduler = e.sender;
+                    $(".k-event").each(function () {
+                        var uid = $(this).data("uid");
+                        var event = scheduler.occurrenceByUid(uid);
+                        if (event.typeId === 1) {                           
+                            $(this).find(".k-event-delete").hide();
+                            $(this).find(".k-event-actions").remove();
+                            $(this).find(".k-event-top-actions").remove();
+                            $(this).find(".k-event-bottom-actions").remove();
+                            $(this).find(".k-resize-handle").remove();
+                        }
+                    });
+                    
                     var scheduler = $("#scheduler").data("kendoScheduler");
                     var temparray = [];
                     var _isalldaybackgroundevent = [];
                     var view = scheduler.view();
                     $('div.k-event').removeClass('special-event');
+
                     e.sender._data.forEach(function (eventDetails) {
 
                         if (eventDetails['isAllDay'] === true) {
@@ -506,8 +586,11 @@
                             });
 
                             if (_events.length === 0) {
+
+                               
                                 var occurrences = scheduler.occurrencesInRange(eventDetails['start'], eventDetails['end']);
                                 var _occurrencesdata = [];
+
                                 occurrences.forEach(function (events) {
                                     var _regularevents = temparray.filter(function (obj) {
                                         return obj.start === events.start && obj.end === events.end;
