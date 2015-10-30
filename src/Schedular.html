@@ -13,7 +13,8 @@
             font-size: 14px;
         }
     </style>
-    <title>Schedular</title>
+    <title>Schedular</title>       
+
     <link rel="stylesheet" href="http://kendo.cdn.telerik.com/2015.3.930/styles/kendo.common-material.min.css" />
     <link rel="stylesheet" href="http://kendo.cdn.telerik.com/2015.3.930/styles/kendo.material.min.css" />
 
@@ -201,6 +202,7 @@
         }
 
         function objectlist(_list) {
+
             var left = 0; var top = 0; var width = 0; var le = 0;
             var _elementsposition = [];
             var _backgroundevents = _list.filter(function (obj) {
@@ -232,63 +234,38 @@
                 function sortdata(data_A, data_B) {
                     return (data_A - data_B);
                 }
-
+            
                 if (_elementsposition.length > 0) {
                     var d = _elementsposition.sort(sortdata);
                     left = d[0];
                 }
-
                 _backgroundevents.forEach(function (events) {
+                    if (events.backgroundtypeId !== 0) {
+                        var backgroundid = events.backgroundtypeId;
+                        var s = getbackgroundeventcolor(backgroundid);
+                        if (s !== 'undefined') {
+                            $('div.k-event[data-uid="' + events.uid + '"]').css({ "background-color": s, "border-color": s });
+                            $('div.k-event[data-uid="' + events.uid + '"]').prepend("<span class='pill comments circle'>" + backgroundid + "</span>");
+                        }
+                    }
                     var _position = $('div.k-event[data-uid="' + events.uid + '"]').position();
-                    if (left === 0 && top === 0) {
-                        left = _position.left;
-                        top = _position.top;
-                    } else if (left > _position.left) {
-                        left = _position.left;
-                        top = _position.top;
-                    }
-                   
-                    $('div.k-event[data-uid="' + events.uid + '"]').css("width", _backgroundeventsWidth);
-                    if (left !== 0) {
-                        $('div.k-event[data-uid="' + events.uid + '"]').css({
-                            "left": left
-                        });
-
-
-                        _bkeventsposition.push({ left: left, uid: events.uid });
-                        left = left + $('div.k-event[data-uid="' + events.uid + '"]').width() + 4;
-                    }
-
-                    var backgroundid = events.backgroundtypeId;
-                    var s = getbackgroundeventcolor(backgroundid);
-                    if (s !== 'undefined') {
-                        $('div.k-event[data-uid="' + events.uid + '"]').css({ "background-color": s, "border-color": s });
-                        $('div.k-event[data-uid="' + events.uid + '"]').prepend("<span class='pill comments circle'>" + backgroundid + "</span>");
-                    }
-
-
+                    _bkeventsposition.push({ left: _position.left, uid: events.uid });
                 });
-
-                if (_elementsposition.length > 0) {
-                    var d = _elementsposition.sort(sortdata);
-                    left = d[0];
-                }
 
                 function sortbkevents(data_A, data_B) {
                     return (data_A.left - data_B.left);
                 }
 
-
                 if (_bkeventsposition.length > 0) {
                     var d = _bkeventsposition.sort(sortbkevents);
-                    for (i = 1; i < d.length ; i++) {
-                        var j = d[i - 1].left + _backgroundeventsWidth + 4;
+                    var _evleft = d[0].left;
+
+                    if (_evleft > left) {
                         $('div.k-event[data-uid="' + d[i].uid + '"]').css({
-                            "left": j
+                            "left": left
                         });
                     }
                 }
-
 
                 if (_elementsposition.length > 0) {
                     var d = _elementsposition.sort(sortdata);
@@ -300,30 +277,40 @@
                     if (left > _position.left) {
                         left = _position.left;
                         top = _position.top;
-                    }
-                    $('div.k-event[data-uid="' + events.uid + '"]').css("width", _regulareventsWidth);
+                    }                   
                     if (left !== 0) {
                         $('div.k-event[data-uid="' + events.uid + '"]').css({
                             "left": left
                         });
                         _rgeventsposition.push({ left: left, uid: events.uid });
                         left = left + $('div.k-event[data-uid="' + events.uid + '"]').width() + 4;
-                        //if (_iscollision === 1) {
-                        //    $('div.k-event[data-uid="' + events.uid + '"] > div').css({ "background": "rgba(58, 135, 173,0.3)" });
-                        //}
                     }
                 });
 
                 if (_rgeventsposition.length > 0) {
                     var d = _rgeventsposition.sort(sortbkevents);
-                    for (i = 1; i < d.length ; i++) {
-                        var j = d[i - 1].left + _regulareventsWidth + 4;
+                    var _evleft = d[0].left;
+                    for (i = 0; i < d.length ; i++) {
                         $('div.k-event[data-uid="' + d[i].uid + '"]').css({
-                            "left": j
+                            "left": _evleft
                         });
+                        _evleft = _evleft + $('div.k-event[data-uid="' + d[i].uid + '"]').width() + 4;
                     }
                 }
 
+                if (_regularevents.length === 1) {
+                    var _newwidth = 0;
+                    if ($('.k-nonwork-hour').width() !== null) {
+                        _newwidth = (AdjustCollisioneventsWidth(_elementsposition.length) * (_elementsposition.length - 1)) + ((_elementsposition.length - 2) * 4) + 2;
+                    }
+                    else {
+                        _newwidth = (AdjustCollisioneventsWidth(_elementsposition.length) * (_elementsposition.length - 1)) + ((_elementsposition.length - 2) * 4);
+                    }
+                    $('div.k-event[data-uid="' + _regularevents[0].uid + '"]').css({
+                        "width": _newwidth
+                    });
+
+                }
             }
             else {
                 noncollisionlist(_list);
@@ -366,10 +353,14 @@
         }
 
         function AdjustCollisioneventsWidth(number) {
-
             var slotwidth = 187;
             if ($('.k-nonwork-hour').width() !== null) {
-                slotwidth = $('.k-nonwork-hour').width();
+                if ($('.k-nonwork-hour').width() > 155 && $('.k-nonwork-hour').width() < 187) {
+                    slotwidth = 187;
+                }
+                else {
+                    slotwidth = $('.k-nonwork-hour').width() + 11.5;
+                }
             }
             else if ($('.k-middle-row').width() !== null) {
                 slotwidth = $('.k-middle-row').width();
@@ -382,8 +373,8 @@
 
     <script>
 
-        $(function () {
 
+        $(function () {
             $("#scheduler").kendoScheduler({
                 date: new Date("2015/10/11"),
                 startTime: new Date("2015/10/11 00:00"),
@@ -396,162 +387,203 @@
                     "month",
                     "agenda"
                 ],
-                editable: true,
                 eventTemplate: $("#event-template").html(),
-                selectable: true,
-                resources: [
-                    // First resource type definition
-                    {
-                        field: "typeId",
-                        title: "Types",
-                        dataSource: [
-                          { text: "Background", value: 1, color: "rgba(215, 215, 215, 1.0)" },
-                          { text: "Foreground", value: 2, color: "rgba(58, 135, 173, 1.0)" }
-                        ]
-                    }
+                resize: function (e) {
+                    if (e.event.typeId === 1)
+                        e.preventDefault();
+                },
+                resizeEnd: function (e) {
+                    if (e.event.typeId === 1)
+                        e.preventDefault();
+                },
+                move: function (e) {
+                    if (e.event.typeId === 1)
+                        e.preventDefault();
+                },
+                moveEnd: function (e) {
+                    if (e.event.typeId === 1)
+                        e.preventDefault();
+                },
+                add: function (e) {
+                    e.preventDefault();
+                },
+                save: function (e) {
+
+                },
+                edit: function (e) {
+                    if (e.event.typeId === 1)
+                        e.preventDefault();
+                },
+                views: ["day"
+                    , { type: "week", selected: true },
+                    "month",
+                    "agenda"
                 ],
-                dataSource: [
-                    { id: "Single regular event alone", title: "Single regular event alone", start: "2015-10-14 05:00:00", end: "2015-10-14 06:00:00", isAllDay: false, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
-                     { id: "Regular allDay Events alone", title: "Single allDay regular event alone", start: "2015-10-16 00:00:00", end: "2015-10-16 00:00:00", isAllDay: true, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
-                      { id: "single background event", title: "single background event", start: "2015-10-16 06:00:00", end: "2015-10-16 07:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-        { id: "Regular allDay Events", title: "Meeting allDay regular event", start: "2015-10-14 00:00:00", end: "2015-10-14 00:00:00", isAllDay: true, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
-         { id: "Background allDay Events", title: "Party Time allDay regular event", start: "2015-10-12 00:00:00", end: "2015-10-12 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-          { id: "Background allDay Partial Events", title: "Lunch Time background partial event", start: "2015-10-13 04:00:00", end: "2015-10-13 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-            { id: "Regular Events", title: "R1 event", start: "2015-10-15 02:00:00", end: "2015-10-15 04:00:00", isAllDay: false, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
-            { id: "Regular Events", title: "R2 event", start: "2015-10-15 02:00:00", end: "2015-10-15 04:00:00", isAllDay: false, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
-              { id: "Regular Events", title: "R1 event", start: "2015-10-16 01:00:00", end: "2015-10-16 02:00:00", isAllDay: false, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
-            { id: "Regular Events", title: "R2 event", start: "2015-10-16 01:00:00", end: "2015-10-16 02:00:00", isAllDay: false, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
-            { id: "Regular Events", title: "R3 event", start: "2015-10-16 01:00:00", end: "2015-10-16 02:00:00", isAllDay: false, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
+                dataSource: {
+                    data: [
+                        {
+                            id: "Single regular event alone",
+                            title: "Single regular event alone",
+                            start: "2015-10-14 05:00:00",
+                            end: "2015-10-14 06:00:00",
+                            isAllDay: false,
+                            description: "Weekend",
+                            typeId: 2,
+                            backgroundtypeId: 0
+                        },
+                    { id: "Regular allDay Events alone", title: "Single allDay regular event alone", start: "2015-10-16 00:00:00", end: "2015-10-16 00:00:00", isAllDay: true, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
+                              { id: "single background event", title: "single background event", start: "2015-10-16 06:00:00", end: "2015-10-16 07:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+                { id: "Regular allDay Events", title: "Meeting allDay regular event", start: "2015-10-14 00:00:00", end: "2015-10-14 00:00:00", isAllDay: true, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
+                 { id: "Background allDay Events", title: "Party Time allDay regular event", start: "2015-10-12 00:00:00", end: "2015-10-12 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+                  { id: "Background allDay Partial Events", title: "Lunch Time background partial event", start: "2015-10-13 04:00:00", end: "2015-10-13 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+                    { id: "Regular Events", title: "R1 event", start: "2015-10-15 02:00:00", end: "2015-10-15 04:00:00", isAllDay: false, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
+                    { id: "Regular Events", title: "R2 event", start: "2015-10-15 02:00:00", end: "2015-10-15 04:00:00", isAllDay: false, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
+                      { id: "Regular Events", title: "R1 event", start: "2015-10-16 01:00:00", end: "2015-10-16 02:00:00", isAllDay: false, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
+                    { id: "Regular Events", title: "R2 event", start: "2015-10-16 01:00:00", end: "2015-10-16 02:00:00", isAllDay: false, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
+                    { id: "Regular Events", title: "R3 event", start: "2015-10-16 01:00:00", end: "2015-10-16 02:00:00", isAllDay: false, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
 
-               { id: "Background Events", title: "B1 event", start: "2015-10-15 07:00:00", end: "2015-10-15 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-            { id: "Background Events", title: "B2 event", start: "2015-10-15 07:00:00", end: "2015-10-15 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 9 },
-              { id: "Background Events", title: "B1 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 3 },
-            { id: "Background Events", title: "B2 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 4 },
-            { id: "Background Events", title: "B3 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 5 },
-             { id: "Background Events", title: "B4 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 6 },
-            { id: "Background Events", title: "B5 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 7 },
-            { id: "Background Events", title: "B6 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 8 },
-            { id: "Background Events", title: "B7 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 9 },
-            { id: "Background Events", title: "B8 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-            { id: "Single allDay Regular Event alone", title: "S1 allDay regular event", start: "2015-10-19 00:00:00", end: "2015-10-19 00:00:00", isAllDay: true, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
-            { id: "Single allDay Background Event alone", title: "S1 allDay background event", start: "2015-10-19 00:00:00", end: "2015-10-19 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-            { id: "Background allDay Regular Event alone", title: "04 LPN, District wide", start: "2015-10-20 00:00:00", end: "2015-10-20 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-            { id: "Background allDay Regular Event alone", title: "01 Secretary/Elementary, Administration", start: "2015-10-20 00:00:00", end: "2015-10-20 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+                       { id: "Background Events", title: "B1 event", start: "2015-10-15 07:00:00", end: "2015-10-15 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+                    { id: "Background Events", title: "B2 event", start: "2015-10-15 07:00:00", end: "2015-10-15 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 9 },
+                      { id: "Background Events", title: "B1 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 3 },
+                    { id: "Background Events", title: "B2 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 4 },
+                    { id: "Background Events", title: "B3 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 5 },
+                     { id: "Background Events", title: "B4 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 6 },
+                    { id: "Background Events", title: "B5 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 7 },
+                    { id: "Background Events", title: "B6 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 8 },
+                    { id: "Background Events", title: "B7 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 9 },
+                    { id: "Background Events", title: "B8 event", start: "2015-10-16 04:00:00", end: "2015-10-16 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+                    { id: "Single allDay Regular Event alone", title: "S1 allDay regular event", start: "2015-10-19 00:00:00", end: "2015-10-19 00:00:00", isAllDay: true, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
+                    { id: "Single allDay Background Event alone", title: "S1 allDay background event", start: "2015-10-19 00:00:00", end: "2015-10-19 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+                    { id: "Background allDay Regular Event alone", title: "04 LPN, District wide", start: "2015-10-20 00:00:00", end: "2015-10-20 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+                    { id: "Background allDay Regular Event alone", title: "01 Secretary/Elementary, Administration", start: "2015-10-20 00:00:00", end: "2015-10-20 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
 
-               { id: "Background Events", title: "03 Secretary/Elementary, Administration", start: "2015-10-21 07:00:00", end: "2015-10-21 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-            { id: "Background Events", title: "02 Secretary/Elementary, Administration", start: "2015-10-21 07:00:00", end: "2015-10-21 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-             { id: "allDay Background Events", title: "01 Secretary/Elementary, Administration", start: "2015-10-22 00:00:00", end: "2015-10-22 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-               { id: "Background Events", title: "03 Secretary/Elementary, Administration", start: "2015-10-22 07:00:00", end: "2015-10-22 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-            { id: "Background Events", title: "02 Secretary/Elementary, Administration", start: "2015-10-22 07:00:00", end: "2015-10-22 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-             { id: "w", title: "01", start: "2015-10-06 03:00:00", end: "2015-10-06 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-             { id: "w", title: "02", start: "2015-10-06 04:00:00", end: "2015-10-06 07:00:00", isAllDay: false, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
-{ id: "TC", title: "[TC]", start: "2015-10-11 08:00:00", end: "2015-10-11 12:00:00", description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
-                    { id: "w", title: "05", start: "2015-10-06 01:00:00", end: "2015-10-06 02:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-          { id: "we", title: "", start: "2015-10-01 00:00:00", end: "2015-10-01 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-    { id: "we", title: "", start: "2015-10-07 00:00:00", end: "2015-10-07 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-{ id: "we", title: "", start: "2015-10-08 00:00:00", end: "2015-10-08 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-{ id: "we", title: "", start: "2015-10-14 00:00:00", end: "2015-10-14 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-{ id: "we", title: "", start: "2015-10-15 00:00:00", end: "2015-10-15 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-{ id: "we", title: "", start: "2015-10-21 00:00:00", end: "2015-10-21 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-{ id: "we", title: "", start: "2015-10-22 00:00:00", end: "2015-10-22 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-{ id: "we", title: "", start: "2015-10-28 00:00:00", end: "2015-10-28 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-{ id: "we", title: "", start: "2015-10-29 00:00:00", end: "2015-10-29 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
-{ id: "NL", title: "[NL]", start: "2015-10-11 00:00:00", end: "2015-10-11 00:00:00", isAllDay: true, description: "No leave allowed", typeId: 2, backgroundtypeId: 0 },
-{ id: "OH", title: "[OH]", start: "2015-10-27 16:00:00", end: "2015-10-27 20:00:00", description: "Open House", typeId: 2, backgroundtypeId: 0 },
-{ id: "TC", title: "[TC]", start: "2015-10-16 12:30:00", end: "2015-10-16 12:45:00", description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
-{ id: "TC", title: "[TC]", start: "2015-10-17 12:30:00", end: "2015-10-17 12:45:00", description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
-{ id: "TC", title: "[TC]", start: "2015-10-19 00:00:00", end: "2015-10-19 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
-{ id: "TC", title: "[TC]", start: "2015-10-19 12:30:00", end: "2015-10-19 13:30:00", description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
-{ id: "TC", title: "[TC]", start: "2015-10-20 00:00:00", end: "2015-10-20 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
-{ id: "TC", title: "[TC]", start: "2015-10-20 12:30:00", end: "2015-10-20 13:30:00", description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
-{ id: "TC", title: "[TC]", start: "2015-10-23 00:00:00", end: "2015-10-23 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
-{ id: "TC", title: "[TC]", start: "2015-10-24 00:00:00", end: "2015-10-24 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
-{ id: "TM", title: "[TM]", start: "2015-10-02 07:00:00", end: "2015-10-02 14:00:00", description: "Parent Conferences", typeId: 2, backgroundtypeId: 0 },
-{ id: "TM", title: "[TM]", start: "2015-10-03 07:00:00", end: "2015-10-03 14:00:00", description: "Parent Conferences", typeId: 2, backgroundtypeId: 0 },
-{ id: "TM", title: "[TM]", start: "2015-10-04 07:00:00", end: "2015-10-04 14:00:00", description: "Parent Conferences", typeId: 2, backgroundtypeId: 0 },
-{ id: "TM", title: "[TM]", start: "2015-10-07 00:00:00", end: "2015-10-07 00:00:00", isAllDay: true, description: "Parent Conferences", typeId: 2, backgroundtypeId: 0 },
-{ id: "TT", title: "[TT]", start: "2015-10-25 00:00:00", end: "2015-10-25 00:00:00", isAllDay: true, description: "Testing 'once' day code", typeId: 2, backgroundtypeId: 0 },
-{ id: "work01", title: "01", start: "2015-10-05 00:00:00", end: "2015-10-05 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work01", title: "01", start: "2015-10-06 00:00:00", end: "2015-10-06 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work01", title: "01", start: "2015-10-09 00:00:00", end: "2015-10-09 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work01", title: "01", start: "2015-10-10 00:00:00", end: "2015-10-10 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work01", title: "01", start: "2015-10-11 00:00:00", end: "2015-10-11 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work01", title: "01", start: "2015-10-11 08:00:00", end: "2015-10-11 14:00:00", isAllDay: false, description: "Secretary/Clerk 07B, Administration", typeId: 2, backgroundtypeId: 0 },
-{ id: "work01", title: "01", start: "2015-10-12 00:00:00", end: "2015-10-12 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work01", title: "01", start: "2015-10-13 00:00:00", end: "2015-10-13 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work01", title: "01", start: "2015-10-17 00:00:00", end: "2015-10-17 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work01", title: "01", start: "2015-10-18 00:00:00", end: "2015-10-18 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work01", title: "01", start: "2015-10-19 00:00:00", end: "2015-10-19 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work01", title: "01", start: "2015-10-20 00:00:00", end: "2015-10-20 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work01", title: "01", start: "2015-10-24 00:00:00", end: "2015-10-24 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work01", title: "01", start: "2015-10-26 00:00:00", end: "2015-10-26 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work01", title: "01", start: "2015-10-30 00:00:00", end: "2015-10-30 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work01", title: "01", start: "2015-10-31 00:00:00", end: "2015-10-31 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-02 08:00:00", end: "2015-10-02 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-03 08:00:00", end: "2015-10-03 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-04 08:00:00", end: "2015-10-04 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-05 08:00:00", end: "2015-10-05 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-06 08:00:00", end: "2015-10-06 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-09 08:00:00", end: "2015-10-09 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-10 08:00:00", end: "2015-10-10 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-11 08:00:00", end: "2015-10-11 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-12 08:00:00", end: "2015-10-12 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-13 08:00:00", end: "2015-10-13 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-16 08:00:00", end: "2015-10-16 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-17 08:00:00", end: "2015-10-17 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-18 08:00:00", end: "2015-10-18 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-19 08:00:00", end: "2015-10-19 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-20 08:00:00", end: "2015-10-20 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-23 08:00:00", end: "2015-10-23 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-24 08:00:00", end: "2015-10-24 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-25 08:00:00", end: "2015-10-25 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-26 08:00:00", end: "2015-10-26 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-27 08:00:00", end: "2015-10-27 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-30 08:00:00", end: "2015-10-30 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work02", title: "02", start: "2015-10-31 08:00:00", end: "2015-10-31 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-02 08:00:00", end: "2015-10-02 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-03 08:00:00", end: "2015-10-03 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-04 08:00:00", end: "2015-10-04 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-05 08:00:00", end: "2015-10-05 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-06 08:00:00", end: "2015-10-06 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-09 08:00:00", end: "2015-10-09 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-10 08:00:00", end: "2015-10-10 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-11 08:00:00", end: "2015-10-11 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-12 08:00:00", end: "2015-10-12 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-13 08:00:00", end: "2015-10-13 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-16 08:00:00", end: "2015-10-16 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-17 08:00:00", end: "2015-10-17 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-18 08:00:00", end: "2015-10-18 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-19 08:00:00", end: "2015-10-19 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-20 08:00:00", end: "2015-10-20 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-23 08:00:00", end: "2015-10-23 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-24 08:00:00", end: "2015-10-24 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-25 08:00:00", end: "2015-10-25 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-26 08:00:00", end: "2015-10-26 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-27 08:00:00", end: "2015-10-27 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-30 08:00:00", end: "2015-10-30 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-{ id: "work03", title: "03", start: "2015-10-31 08:00:00", end: "2015-10-31 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
-                ],               
-                remove: function (e) {
-                    var event = e.event;
-                    if (event.typeId === 1) {
-                        e.preventDefault();
-                        e.stopPropagation();
+                       { id: "Background Events", title: "03 Secretary/Elementary, Administration", start: "2015-10-21 07:00:00", end: "2015-10-21 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+                    { id: "Background Events", title: "02 Secretary/Elementary, Administration", start: "2015-10-21 07:00:00", end: "2015-10-21 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+                     { id: "allDay Background Events", title: "01 Secretary/Elementary, Administration", start: "2015-10-22 00:00:00", end: "2015-10-22 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+                       { id: "Background Events", title: "03 Secretary/Elementary, Administration", start: "2015-10-22 07:00:00", end: "2015-10-22 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+                    { id: "Background Events", title: "02 Secretary/Elementary, Administration", start: "2015-10-22 07:00:00", end: "2015-10-22 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+                     { id: "w", title: "01", start: "2015-10-06 03:00:00", end: "2015-10-06 05:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+                     { id: "w", title: "02", start: "2015-10-06 04:00:00", end: "2015-10-06 07:00:00", isAllDay: false, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
+        { id: "TC", title: "[TC]", start: "2015-10-11 08:00:00", end: "2015-10-11 12:00:00", description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+                            { id: "w", title: "05", start: "2015-10-06 01:00:00", end: "2015-10-06 02:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+                  { id: "we", title: "", start: "2015-10-01 00:00:00", end: "2015-10-01 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+            { id: "we", title: "", start: "2015-10-07 00:00:00", end: "2015-10-07 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+        { id: "we", title: "", start: "2015-10-08 00:00:00", end: "2015-10-08 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+        { id: "we", title: "", start: "2015-10-14 00:00:00", end: "2015-10-14 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+        { id: "we", title: "", start: "2015-10-15 00:00:00", end: "2015-10-15 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+        { id: "we", title: "", start: "2015-10-21 00:00:00", end: "2015-10-21 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+        { id: "we", title: "", start: "2015-10-22 00:00:00", end: "2015-10-22 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+        { id: "we", title: "", start: "2015-10-28 00:00:00", end: "2015-10-28 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+        { id: "we", title: "", start: "2015-10-29 00:00:00", end: "2015-10-29 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+        { id: "NL", title: "[NL]", start: "2015-10-11 00:00:00", end: "2015-10-11 00:00:00", isAllDay: true, description: "No leave allowed", typeId: 2, backgroundtypeId: 0 },
+        { id: "OH", title: "[OH]", start: "2015-10-27 16:00:00", end: "2015-10-27 20:00:00", description: "Open House", typeId: 2, backgroundtypeId: 0 },
+        { id: "TC", title: "[TC]", start: "2015-10-16 12:30:00", end: "2015-10-16 12:45:00", description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+        { id: "TC", title: "[TC]", start: "2015-10-17 12:30:00", end: "2015-10-17 12:45:00", description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+        { id: "TC", title: "[TC]", start: "2015-10-19 00:00:00", end: "2015-10-19 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+        { id: "TC", title: "[TC]", start: "2015-10-19 12:30:00", end: "2015-10-19 13:30:00", description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+        { id: "TC", title: "[TC]", start: "2015-10-20 00:00:00", end: "2015-10-20 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+        { id: "TC", title: "[TC]", start: "2015-10-20 12:30:00", end: "2015-10-20 13:30:00", description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+        { id: "TC", title: "[TC]", start: "2015-10-23 00:00:00", end: "2015-10-23 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+        { id: "TC", title: "[TC]", start: "2015-10-24 00:00:00", end: "2015-10-24 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+        { id: "TM", title: "[TM]", start: "2015-10-02 07:00:00", end: "2015-10-02 14:00:00", description: "Parent Conferences", typeId: 2, backgroundtypeId: 0 },
+        { id: "TM", title: "[TM]", start: "2015-10-03 07:00:00", end: "2015-10-03 14:00:00", description: "Parent Conferences", typeId: 2, backgroundtypeId: 0 },
+        { id: "TM", title: "[TM]", start: "2015-10-04 07:00:00", end: "2015-10-04 14:00:00", description: "Parent Conferences", typeId: 2, backgroundtypeId: 0 },
+        { id: "TM", title: "[TM]", start: "2015-10-07 00:00:00", end: "2015-10-07 00:00:00", isAllDay: true, description: "Parent Conferences", typeId: 2, backgroundtypeId: 0 },
+        { id: "TT", title: "[TT]", start: "2015-10-25 00:00:00", end: "2015-10-25 00:00:00", isAllDay: true, description: "Testing 'once' day code", typeId: 2, backgroundtypeId: 0 },
+        { id: "work01", title: "01", start: "2015-10-05 00:00:00", end: "2015-10-05 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work01", title: "01", start: "2015-10-06 00:00:00", end: "2015-10-06 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work01", title: "01", start: "2015-10-09 00:00:00", end: "2015-10-09 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work01", title: "01", start: "2015-10-10 00:00:00", end: "2015-10-10 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work01", title: "01", start: "2015-10-11 00:00:00", end: "2015-10-11 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work01", title: "01", start: "2015-10-11 08:00:00", end: "2015-10-11 14:00:00", isAllDay: false, description: "Secretary/Clerk 07B, Administration", typeId: 2, backgroundtypeId: 0 },
+        { id: "work01", title: "01", start: "2015-10-12 00:00:00", end: "2015-10-12 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work01", title: "01", start: "2015-10-13 00:00:00", end: "2015-10-13 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work01", title: "01", start: "2015-10-17 00:00:00", end: "2015-10-17 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work01", title: "01", start: "2015-10-18 00:00:00", end: "2015-10-18 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work01", title: "01", start: "2015-10-19 00:00:00", end: "2015-10-19 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work01", title: "01", start: "2015-10-20 00:00:00", end: "2015-10-20 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work01", title: "01", start: "2015-10-24 00:00:00", end: "2015-10-24 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work01", title: "01", start: "2015-10-26 00:00:00", end: "2015-10-26 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work01", title: "01", start: "2015-10-30 00:00:00", end: "2015-10-30 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work01", title: "01", start: "2015-10-31 00:00:00", end: "2015-10-31 00:00:00", isAllDay: true, description: "Secretary/Clerk 07B, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-02 08:00:00", end: "2015-10-02 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-03 08:00:00", end: "2015-10-03 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-04 08:00:00", end: "2015-10-04 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-05 08:00:00", end: "2015-10-05 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-06 08:00:00", end: "2015-10-06 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-09 08:00:00", end: "2015-10-09 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-10 08:00:00", end: "2015-10-10 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-11 08:00:00", end: "2015-10-11 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-12 08:00:00", end: "2015-10-12 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-13 08:00:00", end: "2015-10-13 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-16 08:00:00", end: "2015-10-16 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-17 08:00:00", end: "2015-10-17 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-18 08:00:00", end: "2015-10-18 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-19 08:00:00", end: "2015-10-19 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-20 08:00:00", end: "2015-10-20 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-23 08:00:00", end: "2015-10-23 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-24 08:00:00", end: "2015-10-24 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-25 08:00:00", end: "2015-10-25 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-26 08:00:00", end: "2015-10-26 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-27 08:00:00", end: "2015-10-27 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-30 08:00:00", end: "2015-10-30 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work02", title: "02", start: "2015-10-31 08:00:00", end: "2015-10-31 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-02 08:00:00", end: "2015-10-02 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-03 08:00:00", end: "2015-10-03 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-04 08:00:00", end: "2015-10-04 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-05 08:00:00", end: "2015-10-05 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-06 08:00:00", end: "2015-10-06 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-09 08:00:00", end: "2015-10-09 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-10 08:00:00", end: "2015-10-10 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-11 08:00:00", end: "2015-10-11 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-12 08:00:00", end: "2015-10-12 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-13 08:00:00", end: "2015-10-13 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-16 08:00:00", end: "2015-10-16 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-17 08:00:00", end: "2015-10-17 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-18 08:00:00", end: "2015-10-18 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-19 08:00:00", end: "2015-10-19 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-20 08:00:00", end: "2015-10-20 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-23 08:00:00", end: "2015-10-23 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-24 08:00:00", end: "2015-10-24 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-25 08:00:00", end: "2015-10-25 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-26 08:00:00", end: "2015-10-26 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-27 08:00:00", end: "2015-10-27 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-30 08:00:00", end: "2015-10-30 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+        { id: "work03", title: "03", start: "2015-10-31 08:00:00", end: "2015-10-31 15:00:00", description: "Secretary/Elementary, Administration", typeId: 1, backgroundtypeId: 1 },
+                    ],
+                    schema: {
+                        model: {
+                            id: "id",
+                            fields: {
+                                id: { type: "string" },
+                                title: { defaultValue: "No title", validation: { required: true } },
+                                start: { type: "date" },
+                                end: { type: "date" },
+                                isAllDay: { type: "boolean" },
+                                description: { type: "string" },
+                                typeId: { type: "number" },
+                                backgroundtypeId: { type: "number" },
+                            }
+                        }
                     }
                 },
-                edit: function (e) {                    
-                    if (e.event.typeId === 1) {
-                        e.preventDefault();
-                        e.stopPropagation();
-                    }                 
-                },
+                resources: [
+                              {
+                                  field: "typeId",
+                                  title: "Types",
+                                  dataSource: [
+                                    { text: "Background", value: 1, color: "rgba(215, 215, 215, 1.0)" },
+                                    { text: "Foreground", value: 2, color: "rgba(58, 135, 173, 1.0)" }
+                                  ]
+                              }
+                ],
                 dataBound: function (e) {
-                   
+
                     var scheduler = e.sender;
                     $(".k-event").each(function () {
                         var uid = $(this).data("uid");
                         var event = scheduler.occurrenceByUid(uid);
-                        if (event.typeId === 1) {                           
+                        if (event.typeId === 1) {
                             $(this).find(".k-event-delete").hide();
                             $(this).find(".k-event-actions").remove();
                             $(this).find(".k-event-top-actions").remove();
@@ -559,7 +591,7 @@
                             $(this).find(".k-resize-handle").remove();
                         }
                     });
-                    
+
                     var scheduler = $("#scheduler").data("kendoScheduler");
                     var temparray = [];
                     var _isalldaybackgroundevent = [];
@@ -579,18 +611,14 @@
                                 }
                             }
                         }
-                        else {
-
+                        else {                          
                             var _events = temparray.filter(function (obj) {
                                 return obj.start === eventDetails['start'] && obj.end === eventDetails['end'];
                             });
 
                             if (_events.length === 0) {
-
-                               
                                 var occurrences = scheduler.occurrencesInRange(eventDetails['start'], eventDetails['end']);
-                                var _occurrencesdata = [];
-
+                                var _occurrencesdata = [];                              
                                 occurrences.forEach(function (events) {
                                     var _regularevents = temparray.filter(function (obj) {
                                         return obj.start === events.start && obj.end === events.end;
@@ -617,9 +645,11 @@
 
                     if (_isalldaybackgroundevent.length > 0)
                         setentirecolumnbackgroundcolor(_isalldaybackgroundevent);
+
                 }
             });
         });
     </script>
+
 </body>
 </html>
