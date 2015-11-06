@@ -13,7 +13,7 @@
             font-size: 14px;
         }
     </style>
-    <title>Schedular</title>       
+    <title>Schedular</title>
 
     <link rel="stylesheet" href="http://kendo.cdn.telerik.com/2015.3.930/styles/kendo.common-material.min.css" />
     <link rel="stylesheet" href="http://kendo.cdn.telerik.com/2015.3.930/styles/kendo.material.min.css" />
@@ -202,7 +202,6 @@
         }
 
         function objectlist(_list) {
-
             var left = 0; var top = 0; var width = 0; var le = 0;
             var _elementsposition = [];
             var _backgroundevents = _list.filter(function (obj) {
@@ -225,7 +224,6 @@
                 var _bkeventsposition = [];
                 var _rgeventsposition = [];
 
-
                 _list.forEach(function (events) {
                     var _position = $('div.k-event[data-uid="' + events.uid + '"]').position();
                     _elementsposition.push(_position.left);
@@ -234,36 +232,53 @@
                 function sortdata(data_A, data_B) {
                     return (data_A - data_B);
                 }
-            
+
                 if (_elementsposition.length > 0) {
                     var d = _elementsposition.sort(sortdata);
                     left = d[0];
                 }
+
                 _backgroundevents.forEach(function (events) {
-                    if (events.backgroundtypeId !== 0) {
-                        var backgroundid = events.backgroundtypeId;
-                        var s = getbackgroundeventcolor(backgroundid);
-                        if (s !== 'undefined') {
-                            $('div.k-event[data-uid="' + events.uid + '"]').css({ "background-color": s, "border-color": s });
-                            $('div.k-event[data-uid="' + events.uid + '"]').prepend("<span class='pill comments circle'>" + backgroundid + "</span>");
-                        }
-                    }
                     var _position = $('div.k-event[data-uid="' + events.uid + '"]').position();
+                    $('div.k-event[data-uid="' + events.uid + '"]').css("width", _backgroundeventsWidth);
                     _bkeventsposition.push({ left: _position.left, uid: events.uid });
+                    var backgroundid = events.backgroundtypeId;
+                    var s = getbackgroundeventcolor(backgroundid);
+                    if (s !== 'undefined') {
+                        $('div.k-event[data-uid="' + events.uid + '"]').css({ "background-color": s, "border-color": s });
+                        $('div.k-event[data-uid="' + events.uid + '"]').prepend("<span class='pill comments circle'>" + backgroundid + "</span>");
+                    }
                 });
+
 
                 function sortbkevents(data_A, data_B) {
                     return (data_A.left - data_B.left);
                 }
 
+
+                if (_elementsposition.length > 0) {
+                    var d = _elementsposition.sort(sortdata);
+                    left = d[0];
+                }
+
                 if (_bkeventsposition.length > 0) {
                     var d = _bkeventsposition.sort(sortbkevents);
-                    var _evleft = d[0].left;
+                    var _evleft = left;
+                    for (i = 0; i < d.length ; i++) {
+                        if (d[i].left === left) {
+                            _evleft = d[i].left;
+                        }
+                        else {
+                            var number = i - 1;
+                            if (number > 0 && d[number].left === d[i].left) {
+                                _evleft = _evleft - _backgroundeventsWidth - 4;
+                            }
+                        }
 
-                    if (_evleft > left) {
                         $('div.k-event[data-uid="' + d[i].uid + '"]').css({
-                            "left": left
+                            "left": _evleft
                         });
+                        _evleft = _evleft + _backgroundeventsWidth + 4;
                     }
                 }
 
@@ -274,42 +289,30 @@
 
                 _regularevents.forEach(function (events) {
                     var _position = $('div.k-event[data-uid="' + events.uid + '"]').position();
-                    if (left > _position.left) {
-                        left = _position.left;
-                        top = _position.top;
-                    }                   
-                    if (left !== 0) {
-                        $('div.k-event[data-uid="' + events.uid + '"]').css({
-                            "left": left
-                        });
-                        _rgeventsposition.push({ left: left, uid: events.uid });
-                        left = left + $('div.k-event[data-uid="' + events.uid + '"]').width() + 4;
-                    }
+                    $('div.k-event[data-uid="' + events.uid + '"]').css("width", _regulareventsWidth);
+                    _rgeventsposition.push({ left: _position.left, uid: events.uid });
                 });
 
                 if (_rgeventsposition.length > 0) {
                     var d = _rgeventsposition.sort(sortbkevents);
-                    var _evleft = d[0].left;
+                    var _evleft = left;
                     for (i = 0; i < d.length ; i++) {
+
+                        if (d[i].left === left) {
+                            _evleft = d[i].left;
+                        }
+                        else {
+                            var number = i - 1;
+                            if (number > 0 && d[number].left === d[i].left) {
+                                _evleft = _evleft - _regulareventsWidth - 4;
+                            }
+                        }
+
                         $('div.k-event[data-uid="' + d[i].uid + '"]').css({
                             "left": _evleft
                         });
-                        _evleft = _evleft + $('div.k-event[data-uid="' + d[i].uid + '"]').width() + 4;
+                        _evleft = _evleft + _regulareventsWidth + 4;
                     }
-                }
-
-                if (_regularevents.length === 1) {
-                    var _newwidth = 0;
-                    if ($('.k-nonwork-hour').width() !== null) {
-                        _newwidth = (AdjustCollisioneventsWidth(_elementsposition.length) * (_elementsposition.length - 1)) + ((_elementsposition.length - 2) * 4) + 2;
-                    }
-                    else {
-                        _newwidth = (AdjustCollisioneventsWidth(_elementsposition.length) * (_elementsposition.length - 1)) + ((_elementsposition.length - 2) * 4);
-                    }
-                    $('div.k-event[data-uid="' + _regularevents[0].uid + '"]').css({
-                        "width": _newwidth
-                    });
-
                 }
             }
             else {
@@ -371,10 +374,14 @@
 
     </script>
 
+
+
     <script>
 
 
         $(function () {
+
+
             $("#scheduler").kendoScheduler({
                 date: new Date("2015/10/11"),
                 startTime: new Date("2015/10/11 00:00"),
@@ -431,7 +438,7 @@
                             typeId: 2,
                             backgroundtypeId: 0
                         },
-                    { id: "Regular allDay Events alone", title: "Single allDay regular event alone", start: "2015-10-16 00:00:00", end: "2015-10-16 00:00:00", isAllDay: true, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
+                    { id: "Regular allDay Events alone", title: "Single allDay regular event alone", start: "2015-10-16 06:00:00", end: "2015-10-16 07:00:00", isAllDay: true, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
                               { id: "single background event", title: "single background event", start: "2015-10-16 06:00:00", end: "2015-10-16 07:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
                 { id: "Regular allDay Events", title: "Meeting allDay regular event", start: "2015-10-14 00:00:00", end: "2015-10-14 00:00:00", isAllDay: true, description: "Weekend", typeId: 2, backgroundtypeId: 0 },
                  { id: "Background allDay Events", title: "Party Time allDay regular event", start: "2015-10-12 00:00:00", end: "2015-10-12 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
@@ -456,6 +463,108 @@
                     { id: "Single allDay Background Event alone", title: "S1 allDay background event", start: "2015-10-19 00:00:00", end: "2015-10-19 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
                     { id: "Background allDay Regular Event alone", title: "04 LPN, District wide", start: "2015-10-20 00:00:00", end: "2015-10-20 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
                     { id: "Background allDay Regular Event alone", title: "01 Secretary/Elementary, Administration", start: "2015-10-20 00:00:00", end: "2015-10-20 00:00:00", isAllDay: true, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
+
+
+		{ id: "Test back ", title: "test back event", start: "2015-11-15 02:00:00", end: "2015-11-15 03:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "all day test back event", start: "2015-11-16 02:00:00", end: "2015-11-16 03:00:00", isAllDay: true, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "all day test back event", start: "2015-11-10 00:00:00", end: "2015-11-10 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+
+		{ id: "Test back ", title: "Regular event", start: "2015-11-10 07:00:00", end: "2015-11-10 08:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Back event", start: "2015-11-10 04:00:00", end: "2015-11-10 08:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 2 },
+		{ id: "Test back ", title: "Back event 1", start: "2015-11-10 02:00:00", end: "2015-11-10 04:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+	{ id: "Test back ", title: "Regular event", start: "2015-11-11 15:00:00", end: "2015-11-11 18:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Back event 2", start: "2015-11-10 03:00:00", end: "2015-11-10 07:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+
+		{ id: "Test back ", title: "Back event 3", start: "2015-11-10 02:00:00", end: "2015-11-10 04:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+
+
+		{ id: "Test back ", title: "test back event", start: "2015-11-23 02:00:00", end: "2015-11-23 03:00:00", isAllDay: true, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+
+		{ id: "Test back ", title: "Regular event", start: "2015-11-23 02:00:00", end: "2015-11-23 03:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+
+		{ id: "Test back ", title: "Regular event 1", start: "2015-11-24 06:00:00", end: "2015-11-24 09:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Regular event 2", start: "2015-11-24 07:00:00", end: "2015-11-24 10:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Regular event 3", start: "2015-11-24 08:00:00", end: "2015-11-24 10:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Regular event 4", start: "2015-11-24 08:00:00", end: "2015-11-24 10:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Regular event 5", start: "2015-11-24 08:00:00", end: "2015-11-24 10:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Back event 1", start: "2015-11-24 08:00:00", end: "2015-11-24 10:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "Back event 2", start: "2015-11-24 06:00:00", end: "2015-11-24 09:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+
+
+		{ id: "Test back ", title: "Regular event 1", start: "2015-11-25 04:00:00", end: "2015-11-25 08:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Back event 1", start: "2015-11-25 02:00:00", end: "2015-11-25 04:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "Back event 2", start: "2015-11-25 03:00:00", end: "2015-11-25 07:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "Back event 3", start: "2015-11-25 02:00:00", end: "2015-11-25 04:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+
+
+		{ id: "Test back ", title: "Regular event 1", start: "2015-11-26 06:00:00", end: "2015-11-26 09:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Regular event 2", start: "2015-11-26 07:00:00", end: "2015-11-26 10:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Regular event 3", start: "2015-11-26 08:00:00", end: "2015-11-26 10:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Regular event 4", start: "2015-11-26 08:00:00", end: "2015-11-26 10:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Regular event 5", start: "2015-11-26 08:00:00", end: "2015-11-26 10:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Back event 1", start: "2015-11-26 08:00:00", end: "2015-11-26 10:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+
+
+		{ id: "Test back ", title: "All day Regular event ", start: "2015-11-27 00:00:00", end: "2015-11-27 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "All day background event ", start: "2015-11-27 00:00:00", end: "2015-11-27 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "Back event 1", start: "2015-11-27 08:00:00", end: "2015-11-27 12:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "All day background event 2  ", start: "2015-11-27 00:00:00", end: "2015-11-27 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "All day background event 3 ", start: "2015-11-27 00:00:00", end: "2015-11-27 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "Back event 1", start: "2015-11-27 01:00:00", end: "2015-11-27 04:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "Back event 2", start: "2015-11-27 01:00:00", end: "2015-11-27 04:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "Back event 3", start: "2015-11-27 01:00:00", end: "2015-11-27 04:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "Back event 4", start: "2015-11-27 02:00:00", end: "2015-11-27 03:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "Back event 5", start: "2015-11-27 01:00:00", end: "2015-11-27 03:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "Regular event overlap", start: "2015-11-27 06:00:00", end: "2015-11-27 08:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+
+		{ id: "Test back ", title: "Regular event overlap", start: "2015-11-27 02:00:00", end: "2015-11-27 03:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+
+		{ id: "Test back ", title: "Back event 1", start: "2015-11-22 08:00:00", end: "2015-11-22 15:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "Back event 2", start: "2015-11-22 08:00:00", end: "2015-11-22 15:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "Regular event 1", start: "2015-11-22 10:00:00", end: "2015-11-22 12:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+
+
+
+
+		{ id: "Test back ", title: "All day Regular event ", start: "2015-11-21 00:00:00", end: "2015-11-21 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "All day Regular event 1", start: "2015-11-21 00:00:00", end: "2015-11-21 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "All day Regular event 2", start: "2015-11-21 00:00:00", end: "2015-11-21 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "All day Regular event 4", start: "2015-11-21 00:00:00", end: "2015-11-21 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "All day background event ", start: "2015-11-21 00:00:00", end: "2015-11-21 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "All day background event 1 ", start: "2015-11-21 00:00:00", end: "2015-11-21 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "All day background event 2 ", start: "2015-11-21 00:00:00", end: "2015-11-21 00:00:00", isAllDay: true, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+
+
+		{ id: "Test back ", title: "Regular event 1", start: "2015-11-17 01:00:00", end: "2015-11-17 04:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Regular event 2", start: "2015-11-17 01:00:00", end: "2015-11-17 04:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Regular event 3", start: "2015-11-17 01:00:00", end: "2015-11-17 04:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Regular event 4", start: "2015-11-17 01:00:00", end: "2015-11-17 02:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Regular event 5", start: "2015-11-17 01:00:00", end: "2015-11-17 03:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Regular event 6", start: "2015-11-17 01:00:00", end: "2015-11-17 04:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Regular event 7", start: "2015-11-17 01:00:00", end: "2015-11-17 04:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Regular event 8", start: "2015-11-17 01:00:00", end: "2015-11-17 04:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Back event 1", start: "2015-11-17 04:00:00", end: "2015-11-17 06:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "Back event 2", start: "2015-11-17 04:00:00", end: "2015-11-17 06:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 2 },
+		{ id: "Test back ", title: "Back event 3", start: "2015-11-17 04:00:00", end: "2015-11-17 06:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 3 },
+		{ id: "Test back ", title: "Back event 4", start: "2015-11-17 01:00:00", end: "2015-11-17 02:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 5 },
+		{ id: "Test back ", title: "Back event 5", start: "2015-11-17 01:00:00", end: "2015-11-17 03:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 6 },
+
+
+
+		{ id: "Test back ", title: "Regular event 1", start: "2015-11-18 02:00:00", end: "2015-11-18 04:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Regular event 2", start: "2015-11-18 02:00:00", end: "2015-11-18 04:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Regular event 3", start: "2015-11-18 02:00:00", end: "2015-11-18 04:00:00", isAllDay: false, description: "NEWA Testing", typeId: 2, backgroundtypeId: 0 },
+		{ id: "Test back ", title: "Back event 1", start: "2015-11-18 02:00:00", end: "2015-11-18 04:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+
+		{ id: "Test back ", title: "Back event 1", start: "2015-11-19 04:00:00", end: "2015-11-19 06:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 1 },
+		{ id: "Test back ", title: "Back event 2", start: "2015-11-19 04:00:00", end: "2015-11-19 06:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 2 },
+		{ id: "Test back ", title: "Back event 3", start: "2015-11-19 04:00:00", end: "2015-11-19 06:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 3 },
+		{ id: "Test back ", title: "Back event 4", start: "2015-11-19 02:00:00", end: "2015-11-19 04:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 4 },
+		{ id: "Test back ", title: "Back event 5", start: "2015-11-19 03:00:00", end: "2015-11-19 05:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 5 },
+		{ id: "Test back ", title: "Back event 6", start: "2015-11-19 04:00:00", end: "2015-11-19 06:00:00", isAllDay: false, description: "NEWA Testing", typeId: 1, backgroundtypeId: 6 },
+
+
+
 
                        { id: "Background Events", title: "03 Secretary/Elementary, Administration", start: "2015-10-21 07:00:00", end: "2015-10-21 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
                     { id: "Background Events", title: "02 Secretary/Elementary, Administration", start: "2015-10-21 07:00:00", end: "2015-10-21 08:00:00", isAllDay: false, description: "Weekend", typeId: 1, backgroundtypeId: 1 },
@@ -578,7 +687,6 @@
                               }
                 ],
                 dataBound: function (e) {
-
                     var scheduler = e.sender;
                     $(".k-event").each(function () {
                         var uid = $(this).data("uid");
@@ -595,7 +703,7 @@
                     var scheduler = $("#scheduler").data("kendoScheduler");
                     var temparray = [];
                     var _isalldaybackgroundevent = [];
-                    var view = scheduler.view();
+                    // var view = scheduler.view();
                     $('div.k-event').removeClass('special-event');
 
                     e.sender._data.forEach(function (eventDetails) {
@@ -603,6 +711,7 @@
                         if (eventDetails['isAllDay'] === true) {
                             if (eventDetails['backgroundtypeId'] !== 0) {
                                 _isalldaybackgroundevent.push(eventDetails);
+                                temparray.push(eventDetails);
                                 var backgroundid = eventDetails['backgroundtypeId'];
                                 var s = getbackgroundeventcolor(backgroundid);
                                 if (s !== 'undefined') {
@@ -611,27 +720,45 @@
                                 }
                             }
                         }
-                        else {                          
+                        else {
                             var _events = temparray.filter(function (obj) {
                                 return obj.start === eventDetails['start'] && obj.end === eventDetails['end'];
                             });
 
                             if (_events.length === 0) {
-                                var occurrences = scheduler.occurrencesInRange(eventDetails['start'], eventDetails['end']);
-                                var _occurrencesdata = [];                              
-                                occurrences.forEach(function (events) {
-                                    var _regularevents = temparray.filter(function (obj) {
-                                        return obj.start === events.start && obj.end === events.end;
-                                    });
+                                var _occurrencesdata = [];
+                                function AddValueInArrayList(_data) {
 
-                                    if (_regularevents.length === 0) {
-                                        temparray.push(events);
-                                        _occurrencesdata.push(events);
+                                    _data.forEach(function (item) {
+                                        var _events = temparray.filter(function (obj) {
+                                            return obj.start === item.start && obj.end === item.end;
+                                        });
+
+                                        if (_events.length === 0) {
+                                            temparray.push(item);
+                                            _occurrencesdata.push(item);
+                                        }
+                                    });
+                                }
+
+                                if (_occurrencesdata.length === 0) {
+
+                                    var occurrences = e.sender.occurrencesInRange(eventDetails['start'], eventDetails['end']);
+                                    if (occurrences.length > 0) {
+                                        AddValueInArrayList(occurrences);
                                     }
-                                });
+                                }
+
+                                for (var i = 1 ; i < _occurrencesdata.length; i++) {
+                                    var occurrences = e.sender.occurrencesInRange(_occurrencesdata[i].start, _occurrencesdata[i].end);
+                                    if (occurrences.length > 0) {
+                                        AddValueInArrayList(occurrences);
+                                    }
+                                }
 
                                 if (_occurrencesdata.length > 0)
                                     objectlist(_occurrencesdata);
+
                             }
                         }
 
