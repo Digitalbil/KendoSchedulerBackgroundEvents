@@ -197,6 +197,14 @@
             return backgroundEventsColor[id].color;
         }
 
+        function sortData(data_A, data_B) {
+            return (data_A - data_B);
+        }
+
+        function sortEvents(data_A, data_B) {
+            return (data_A.left - data_B.left);
+        }
+
         function timeSlotEventList(eventList) {
             var left = 0; var top = 0; var width = 0;
             var eventsPosition = [];
@@ -224,10 +232,6 @@
                     eventsPosition.push(_position.left);
                 });
 
-                function sortData(data_A, data_B) {
-                    return (data_A - data_B);
-                }
-
                 if (eventsPosition.length > 0) {
                     var sortArray = eventsPosition.sort(sortData);
                     left = sortArray[0];
@@ -235,20 +239,16 @@
 
                 backgroundEvents.forEach(function (events) {
                     var _position = $('div.k-event[data-uid="' + events.uid + '"]').position();
-                    $('div.k-event[data-uid="' + events.uid + '"]').css("width", backgroundEventWidth);
-                    backgroundEventsPositions.push({ left: _position.left, uid: events.uid });
                     var backgroundType = events.backgroundtypeId;
                     var backgroundEventColor = getBackgroundEventColor(backgroundType);
+
+                    $('div.k-event[data-uid="' + events.uid + '"]').css("width", backgroundEventWidth);
+                    backgroundEventsPositions.push({ left: _position.left, uid: events.uid });
                     if (backgroundEventColor !== 'undefined') {
                         $('div.k-event[data-uid="' + events.uid + '"]').css({ "background-color": backgroundEventColor, "border-color": backgroundEventColor });
                         $('div.k-event[data-uid="' + events.uid + '"]').prepend("<span class='pill comments circle'>" + backgroundType + "</span>");
                     }
                 });
-
-
-                function sortEvents(data_A, data_B) {
-                    return (data_A.left - data_B.left);
-                }
 
                 if (eventsPosition.length > 0) {
                     var sortArray = eventsPosition.sort(sortData);
@@ -330,6 +330,7 @@
         function setEntireColumnBackgroundColor(eventList) {
             var scheduler = $("#scheduler").data("kendoScheduler");
             var view = scheduler.view();
+
             view.table.find("td[role=gridcell]").each(function () {
                 if ($(this) != null) {
                     var element = $(this);
@@ -351,6 +352,7 @@
         function adjustCollisionEventsWidth(number) {
             var slotWidth = 187;
             var eventWidth;
+
             if ($('.k-nonwork-hour').width() !== null) {
                 if ($('.k-nonwork-hour').width() > 155 && $('.k-nonwork-hour').width() < 187) {
                     slotWidth = 187;
@@ -362,7 +364,9 @@
             else if ($('.k-middle-row').width() !== null) {
                 slotWidth = $('.k-middle-row').width();
             }
+
             eventWidth = (slotWidth - (slotWidth * 0.10)) / number - 4;
+
             return eventWidth;
         }
 
@@ -370,7 +374,6 @@
 
     <script>
         $(function () {
-
 
             $("#scheduler").kendoScheduler({
                 date: new Date("2015/10/11"),
@@ -637,6 +640,10 @@
                 ],
                 dataBound: function (e) {
                     var scheduler = e.sender;
+                    var scheduler = $("#scheduler").data("kendoScheduler");
+                    var tempArray = [];
+                    var allDayBackgroundEvents = [];
+
                     $(".k-event").each(function () {
                         var uid = $(this).data("uid");
                         var event = scheduler.occurrenceByUid(uid);
@@ -649,20 +656,18 @@
                         }
                     });
 
-                    var scheduler = $("#scheduler").data("kendoScheduler");
-                    var tempArray = [];
-                    var allDayBackgroundEvents = [];
-
                     $('div.k-event').removeClass('special-event');
 
                     e.sender._data.forEach(function (eventDetails) {
 
                         if (eventDetails['isAllDay'] === true) {
                             if (eventDetails['backgroundtypeId'] !== 0) {
-                                allDayBackgroundEvents.push(eventDetails);
-                                tempArray.push(eventDetails);
                                 var backgroundType = eventDetails['backgroundtypeId'];
                                 var backgroundEventColor = getBackgroundEventColor(backgroundType);
+
+                                allDayBackgroundEvents.push(eventDetails);
+                                tempArray.push(eventDetails);
+
                                 if (backgroundEventColor !== 'undefined') {
                                     $('div.k-event[data-uid="' + eventDetails['uid'] + '"]').css({ "background-color": backgroundEventColor, "border-color": backgroundEventColor });
                                     $('div.k-event[data-uid="' + eventDetails['uid'] + '"]').prepend("<span class='pill comments circle'>" + backgroundType + "</span>");
