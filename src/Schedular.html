@@ -229,7 +229,12 @@
 
                 eventList.forEach(function (events) {
                     var _position = $('div.k-event[data-uid="' + events.uid + '"]').position();
-                    eventsPosition.push(_position.left);
+
+                    //when switching from week -> month view, there are some regular events that will not be visible in the month view.
+                    // since kendo is not adding them to the dom, they won't exist, and _position will be undefined.
+                    if (typeof _position !== 'undefined'){
+                        eventsPosition.push(_position.left);
+                    }
                 });
 
                 if (eventsPosition.length > 0) {
@@ -239,14 +244,22 @@
 
                 backgroundEvents.forEach(function (events) {
                     var _position = $('div.k-event[data-uid="' + events.uid + '"]').position();
-                    var backgroundType = events.backgroundtypeId;
-                    var backgroundEventColor = getBackgroundEventColor(backgroundType);
 
-                    $('div.k-event[data-uid="' + events.uid + '"]').css("width", backgroundEventWidth);
-                    backgroundEventsPositions.push({ left: _position.left, uid: events.uid });
-                    if (backgroundEventColor !== 'undefined') {
-                        $('div.k-event[data-uid="' + events.uid + '"]').css({ "background-color": backgroundEventColor, "border-color": backgroundEventColor });
-                        $('div.k-event[data-uid="' + events.uid + '"]').prepend("<span class='pill comments circle'>" + backgroundType + "</span>");
+                    //when switching from week -> month view, there are some regular events that will not be visible in the month view.
+                    // since kendo is not adding them to the dom, they won't exist, and _position will be undefined.
+                    if (typeof _position !== 'undefined') {
+                        var backgroundType = events.backgroundtypeId;
+                        var backgroundEventColor = getBackgroundEventColor(backgroundType);
+
+                        $('div.k-event[data-uid="' + events.uid + '"]').css("width", backgroundEventWidth);
+                        backgroundEventsPositions.push({left: _position.left, uid: events.uid});
+                        if (backgroundEventColor !== 'undefined') {
+                            $('div.k-event[data-uid="' + events.uid + '"]').css({
+                                "background-color": backgroundEventColor,
+                                "border-color": backgroundEventColor
+                            });
+                            $('div.k-event[data-uid="' + events.uid + '"]').prepend("<span class='pill comments circle'>" + backgroundType + "</span>");
+                        }
                     }
                 });
 
@@ -283,8 +296,12 @@
 
                 regularEvents.forEach(function (events) {
                     var _position = $('div.k-event[data-uid="' + events.uid + '"]').position();
-                    $('div.k-event[data-uid="' + events.uid + '"]').css("width", regularEventWidth);
-                    regularEventsPositions.push({ left: _position.left, uid: events.uid });
+                    //when switching from week -> month view, there are some regular events that will not be visible in the month view.
+                    // since kendo is not adding them to the dom, they won't exist, and _position will be undefined.
+                    if (typeof _position !== 'undefined') {
+                        $('div.k-event[data-uid="' + events.uid + '"]').css("width", regularEventWidth);
+                        regularEventsPositions.push({left: _position.left, uid: events.uid});
+                    }
                 });
 
                 if (regularEventsPositions.length > 0) {
