@@ -193,6 +193,11 @@
         backgroundEventsColor.push({ 'color': 'rgba(255, 102, 255, 1)' });
         backgroundEventsColor.push({ 'color': 'rgba(153, 0, 204, 1)' });
 
+        var defaultSingleColumnWidthPixels = 187;
+        var lowerBoundSingleColumnWidthPixels = 155;
+        var slotWidthPaddingPixels = 11.5;
+        var threeColumnWidthPaddingPixels = 4;
+
         function getBackgroundEventColor(id) {
             return backgroundEventsColor[id].color;
         }
@@ -280,14 +285,14 @@
                         else {
                             var number = i - 1;
                             if (number > 0 && sortArray[number].left === sortArray[i].left) {
-                                eventLeftMargin = eventLeftMargin - backgroundEventWidth - 4;
+                                eventLeftMargin = eventLeftMargin - backgroundEventWidth - threeColumnWidthPaddingPixels;
                             }
                         }
 
                         $('div.k-event[data-uid="' + sortArray[i].uid + '"]').css({
                             "left": eventLeftMargin
                         });
-                        eventLeftMargin = eventLeftMargin + backgroundEventWidth + 4;
+                        eventLeftMargin = eventLeftMargin + backgroundEventWidth + threeColumnWidthPaddingPixels;
                     }
                 }
 
@@ -317,14 +322,14 @@
                         else {
                             var number = i - 1;
                             if (number > 0 && sortArray[number].left === sortArray[i].left) {
-                                eventLeftMargin = eventLeftMargin - regularEventWidth - 4;
+                                eventLeftMargin = eventLeftMargin - regularEventWidth - threeColumnWidthPaddingPixels;
                             }
                         }
 
                         $('div.k-event[data-uid="' + sortArray[i].uid + '"]').css({
                             "left": eventLeftMargin
                         });
-                        eventLeftMargin = eventLeftMargin + regularEventWidth + 4;
+                        eventLeftMargin = eventLeftMargin + regularEventWidth + threeColumnWidthPaddingPixels;
                     }
                 }
             }
@@ -369,22 +374,22 @@
         }
 
         function adjustCollisionEventsWidth(number) {
-            var slotWidth = 187;
+            var slotWidth = defaultSingleColumnWidthPixels;
             var eventWidth;
 
             if ($('.k-nonwork-hour').width() !== null) {
-                if ($('.k-nonwork-hour').width() > 155 && $('.k-nonwork-hour').width() < 187) {
-                    slotWidth = 187;
+                if ($('.k-nonwork-hour').width() > lowerBoundSingleColumnWidthPixels && $('.k-nonwork-hour').width() < defaultSingleColumnWidthPixels) {
+                    slotWidth = defaultSingleColumnWidthPixels;
                 }
                 else {
-                    slotWidth = $('.k-nonwork-hour').width() + 11.5;
+                    slotWidth = $('.k-nonwork-hour').width() + slotWidthPaddingPixels;
                 }
             }
             else if ($('.k-middle-row').width() !== null) {
                 slotWidth = $('.k-middle-row').width();
             }
 
-            eventWidth = ((slotWidth * 0.90) / number) - 4;
+            eventWidth = ((slotWidth * 0.90) / number) - threeColumnWidthPaddingPixels;
 
             return eventWidth;
         }
